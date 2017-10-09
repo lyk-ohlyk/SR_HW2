@@ -1,6 +1,9 @@
 # SR_HW2
 compute features for .plp files using difference and CMVN
 
+运行环境：
+VS2015
+
 头文件：
 declaration.h
 Plp.h  （类声明）
