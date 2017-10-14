@@ -40,30 +40,51 @@ size_t Ngram::getId(string word) {
 		return vocab[word];
 	}
 	else
-		return 0;  //<unk>
+		return 1;  //<unk>
 }
 
 void Ngram::Insert(vector<string> word_vec) {
 
 	Node *current_node = root;
 	size_t id;
+	size_t vec_size = word_vec.size();
 	Node *insert_node_father = nullptr;
-	for (size_t i = 0; i < word_vec.size(); i++) {
-		id = getId(word_vec[i]);
-		if (i == word_vec.size() - 1)
-			insert_node_father = current_node;
-			current_node = current_node->children->Search(id);  
-	}  //找到了最后一个词的id对应位置
-
-	if (current_node->word_id == id)
+	id = getId(word_vec[word_vec.size() - 1]);
+	if (vec_size == 1)
+		current_node = root->children->Search(id);
+	if (vec_size == 2)
+		current_node = word1_pos->children->Search(id);
+	if (vec_size == 3)
+		current_node = word2_pos->children->Search(id);
+	//for (size_t i = 0; i < word_vec.size(); i++) {
+	//	id = getId(word_vec[i]);
+	//	if (i == word_vec.size() - 1)
+	//		insert_node_father = current_node;
+	//		current_node = current_node->children->Search(id);  
+	//}  //找到了最后一个词的id对应位置
+	if (current_node->word_id == id) {
+		if(vec_size == 1)
+			word1_pos = current_node;
+		if (vec_size == 2)
+			word2_pos = current_node;
 		current_node->freq++;
+	}
 	else {
-		insert_node_father->children->Insert(current_node, id);
+		//insert_node_father->children->Insert(current_node, id);
+		if (vec_size == 1) {
+			root->children->Insert(current_node, id);
+			word1_pos = current_node->sibling;
+		}
+		if (vec_size == 2) {
+			word1_pos->children->Insert(current_node, id);
+			word2_pos = current_node->sibling;
+		}
+		if (vec_size == 3) {
+			word2_pos->children->Insert(current_node, id);
+		}
 	}
 }
 
-//Node* FindPos(Node* head, Node* tail, unsigned int word_id) {}
-	
 vector<string> Ngram::wordSplit(string gram) {
 	//以空格为分隔符将gram分成vector<string>
 	size_t pos, str_size;
@@ -99,36 +120,62 @@ size_t Ngram::getFreq(string gram) {
 
 void Ngram::readTrainFile(string filename) {
 	string word, word1, word2, word3;
-	//int ngram = 0; //按ngram+1个词读取至gram
 	ifstream fs;
 	fs.open(filename);
 	if (!fs) {
 		cerr << "Can't open training set." << endl;
 		exit(-2);
 	}
-	size_t word_count;
+	size_t word_count = 0;
 	size_t line_count = 0;
 	vector<string> word_vec;
 	while (fs >> word) {
 		if (word == "<s>") {
-			word1 = word2 = word3 = "";
-			word_count = 1;
+			word2 = word3 = "";
 			if(line_count % 100 == 0)
 				cout << "reading line: " << line_count << endl;
 			line_count++;
-		}
-		word1 = word2; word2 = word3; word3 = word;
-		word_vec = { word3 };
-		Insert(word_vec);
-		if (word_count > 1) {
-			word_vec = { word2, word3 };
-			Insert(word_vec);
-		}
-		if (word_count > 2) {
-			word_vec = { word1,word2,word3 };
-			Insert(word_vec);
+			word_count = 0;
 		}
 		word_count++;
+		if(word_count >3){
+			word1 = word2; word2 = word3; word3 = word;
+		}
+		if (word_count == 1)
+			word1 = word;
+		if (word_count == 2) 
+			word2 = word;
+		if (word_count == 3)
+			word3 = word;
+		if (word_count >= 3) {
+			word_vec = { word1 };
+			Insert(word_vec);
+			word_vec = { word1, word2 };
+			Insert(word_vec);
+			word_vec = { word1, word2, word3 };
+			Insert(word_vec);
+		}
+		if (word == "</s>") {
+			word_vec = { word2 };
+			Insert(word_vec);
+			word_vec = { word2, word3 };
+			Insert(word_vec);
+			word_vec = { word3 };
+			Insert(word_vec);
+			word1_pos = word2_pos = nullptr;
+		}
+
+		//word1 = word2; word2 = word3; word3 = word;
+		//word_vec = { word3 };
+		//Insert(word_vec);
+		//if (word_count > 1) {
+		//	word_vec = { word2, word3 };
+		//	Insert(word_vec);
+		//}
+		//if (word_count > 2) {
+		//	word_vec = { word1,word2,word3 };
+		//	Insert(word_vec);
+		//}
 	}
 };
 

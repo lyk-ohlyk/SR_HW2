@@ -66,8 +66,6 @@ Node* LinkList::Search(unsigned int id) {
 	if (current == nullptr || current->word_id != id) return prev;
 	return current;
 };
-
-
 Node* LinkList::biSearch(unsigned int id) {//return *list[y] where max{list[y].id|list[y].id <= id}
 	Node *midNode;
 	size_t high, low = 1, mid; //skip list head
